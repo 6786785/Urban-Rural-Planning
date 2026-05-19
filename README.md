@@ -23,15 +23,12 @@
 📸 界面预览
 (建议在此处放几张你平台的运行截图，将图片放在项目的 images 文件夹中)
 城市全景生成	日照阴影分析
-<img src="https://via.placeholder.com/400x250.png?text=Preview+1" width="400">	<img src="https://via.placeholder.com/400x250.png?text=Preview+2" width="400">
 地块指标测算	路网与地形导出
-<img src="https://via.placeholder.com/400x250.png?text=Preview+3" width="400">	<img src="https://via.placeholder.com/400x250.png?text=Preview+4" width="400">
 🚀 快速开始
 本项目为纯前端无无服务器架构，极度开箱即用。
 克隆项目到本地：
 code
 Bash
-git clone https://github.com/你的用户名/你的仓库名.git
 运行平台：
 直接在浏览器（推荐使用 Chrome 或 Edge）中双击打开 index.html (即源码文件) 即可使用。
 提示：由于浏览器的跨域安全策略，部分模型导出功能如果出现跨域报错，建议使用本地服务器运行（例如使用 VSCode 的 Live Server 插件）。
@@ -54,13 +51,8 @@ Enter: 在生成模式下快速刷新生成结果。
 点击左侧工具栏的 💾 项目与界面。
 选择 导出当前项目，即可将当前的建筑、路网、视角书签等所有状态保存为一个 .json 文件。
 下次使用时，点击 导入本地项目 即可完美复原工作区。
-🤝 贡献指南
+🤝 合作要求
 欢迎任何对城市设计、WebGIS、前端参数化生成感兴趣的开发者提交 PR 或 Issue！
-Fork 本仓库
-创建您的特性分支 (git checkout -b feature/AmazingFeature)
-提交您的更改 (git commit -m 'Add some AmazingFeature')
-将您的修改推送到分支 (git push origin feature/AmazingFeature)
-开启一个 Pull Request
 ✉️ 联系与反馈
 作者: yyc (杜斯特里恩)
 Email: yangych69@mail2.sysu.edu.cn

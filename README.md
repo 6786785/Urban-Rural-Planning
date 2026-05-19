@@ -1,5 +1,5 @@
 # Urban-Rural-Planning
-🌍 3D Parametric Urban Planning Platform (3D参数化城市设计平台)
+🌍 Parametric Urban Planning Platform (城市规划设计平台)
 基于 MapLibre GL JS 和 Turf.js 构建的纯前端、轻量级、高度参数化的 3D 城市规划与设计平台。无需配置复杂的后端环境，双击 HTML 文件即可在浏览器中开启专业的城市设计工作流。
 由 yyc (杜斯特里恩) 开发。
 ✨ 核心特性

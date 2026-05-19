@@ -1,0 +1,601 @@
+<head>
+    <meta charset="UTF-8">
+    <title>3D 城市规划设计平台by yyc</title>
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="https://unpkg.com/earcut@2.2.4/dist/earcut.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --ui-font-size: 13px;
+            --ui-icon-size: 44px;
+            --ui-icon-font: 20px;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(to bottom, #54cfff, #ffffff 50%, #54cfff);
+            color: #fff;
+            overflow: hidden;
+            font-size: var(--ui-font-size);
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            z-index: 1;
+            background: linear-gradient(to bottom, #54cfff, #ffffff 50%, #54cfff);
+        }
+
+        .panel {
+            position: absolute;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh; /* 界面自适应：限制最大高度防止溢出屏幕 */
+        }
+
+        .panel-close-bottom {
+            margin-top: 15px !important;
+            width: 100%;
+            text-align: center;
+        }
+
+        .sidebar {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            z-index: 20;
+            display: flex;
+            flex-flow: column wrap;
+            max-height: calc(100vh - 60px);
+            gap: 12px;
+            align-content: flex-start;
+        }
+
+        .top-right-bar {
+            position: absolute;
+            top: 15px;
+            right: 55px;
+            z-index: 20;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .bottom-right-tools {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            z-index: 20;
+            display: flex;
+            gap: 12px;
+        }
+
+        .nav-ball,
+        .float-btn {
+            width: var(--ui-icon-size);
+            height: var(--ui-icon-size);
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--ui-icon-font);
+            cursor: grab;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            transition: background 0.2s, border 0.2s, transform 0.2s;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .nav-ball:active,
+        .float-btn:active {
+            cursor: grabbing;
+        }
+
+        .nav-ball:hover,
+        .float-btn:hover {
+            background: rgba(56, 189, 248, 0.15);
+            transform: translateY(-2px);
+            border-color: #38bdf8;
+        }
+
+        .nav-ball.active {
+            background: rgba(56, 189, 248, 0.25);
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+
+        #property-panel {
+            top: 80px;
+            right: 20px;
+            left: auto;
+            width: 280px;
+        }
+
+        #metrics-panel {
+            top: 120px;
+            right: 320px;
+            left: auto;
+            width: 280px;
+            display: none;
+        }
+
+        #top-placement-hud {
+            top: 40px;
+            right: 320px;
+            left: auto;
+            width: 300px;
+            display: flex;
+        }
+
+        .panel.map-controls {
+            bottom: 90px;
+            right: 20px;
+            width: 250px;
+        }
+
+        #basemap-editor-modal {
+            top: auto;
+            bottom: 90px;
+            right: 290px;
+            width: 340px;
+        }
+
+        #terrain-settings-modal {
+            top: auto;
+            bottom: 130px;
+            right: 310px;
+            width: 310px;
+        }
+
+#popout-panel {
+            top: 65px;
+            left: 80px;
+            right: auto;
+            width: 340px;
+            resize: both; /* 【修改】：从 vertical 改为 both，允许自由调节宽高 */
+            overflow: hidden;
+            max-height: calc(100vh - 80px); /* 界面自适应：确保可缩放且不越界 */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 【新增】：让地图上的其他独立功能面板也支持自由拉伸宽高 */
+        #property-panel, #metrics-panel, #map-controls-panel, #terrain-settings-modal, #basemap-editor-modal, #top-placement-hud, #info-modal {
+            resize: both;
+            overflow: auto;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(56, 189, 248, 0.6);
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.3);
+            border-radius: 3px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(56, 189, 248, 0.6);
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #fff;
+            cursor: grab;
+            user-select: none;
+            border-bottom: 1px dashed rgba(56, 189, 248, 0.5);
+            padding-bottom: 10px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .panel h3:active {
+            cursor: grabbing;
+        }
+
+        .tool-group {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 14px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .tool-group:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        .tool-group h4 {
+            font-size: 14px;
+            color: #38bdf8;
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 6px;
+            font-weight: 600;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            background: rgba(30, 41, 59, 0.8);
+            color: #f8fafc;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: var(--ui-font-size);
+            font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+        }
+
+        button:hover {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+            box-shadow: none;
+        }
+
+        button.active {
+            background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+            border-color: #7dd3fc;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+
+        button.btn-danger {
+            background: rgba(220, 38, 38, 0.2);
+            border-color: rgba(220, 38, 38, 0.4);
+            color: #fca5a5;
+        }
+
+        button.btn-danger:hover {
+            background: rgba(220, 38, 38, 0.5);
+            border-color: #ef4444;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .flex-row button {
+            text-align: center;
+            margin-top: 0;
+        }
+
+        .hint {
+            font-size: 11px;
+            color: #cbd5e1;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .hint.highlight {
+            color: #fbbf24;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        label {
+            display: block;
+            font-size: var(--ui-font-size);
+            margin-top: 8px;
+            color: #e2e8f0;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: 100%;
+            margin-top: 4px;
+            padding: 6px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #475569;
+            color: #fff;
+            border-radius: 4px;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 5px rgba(56, 189, 248, 0.5);
+        }
+
+        input[type="range"] {
+            margin-top: 8px;
+            width: 100%;
+            cursor: pointer;
+            accent-color: #38bdf8;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            margin-top: 8px;
+            cursor: pointer;
+            color: #e2e8f0;
+        }
+
+        #distance-tooltip {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.9);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #38bdf8;
+        }
+
+        .tmpl-item {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding-right: 4px;
+            align-items: stretch;
+            transition: all 0.2s;
+            cursor: grab;
+        }
+
+        .block-tmpl-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        .block-tmpl-item:hover { background: rgba(255, 255, 255, 0.1); }
+        .block-tmpl-item.active {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: #f59e0b;
+        }
+        .block-tmpl-item .name-box { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .block-tmpl-item .ops { display: none; gap: 4px; }
+        .block-tmpl-item:hover .ops { display: flex; }
+        .block-tmpl-item .ops span { padding: 0 4px; cursor: pointer; color: #94a3b8; font-size: 12px; }
+        .block-tmpl-item .ops span:hover { color: #fff; }
+
+        .tmpl-item:active {
+            cursor: grabbing;
+        }
+
+        .tmpl-item input[type="checkbox"] {
+            margin: 0 8px;
+            cursor: pointer;
+            accent-color: #10b981;
+        }
+
+        #info-modal {
+            position: absolute;
+            top: 20vh;
+            left: calc(50% - 210px);
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid #38bdf8;
+            border-radius: 12px;
+            padding: 24px;
+            width: 420px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(16px);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #info-modal h3 {
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 8px;
+            color: #fff;
+            cursor: grab;
+            font-weight: bold;
+        }
+
+        #info-modal p {
+            font-size: 13px;
+            color: #e2e8f0;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1px;
+            margin-top: 8px;
+        }
+
+        .color-swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 3px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.1s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+            border-color: #fff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+
+        #metrics-panel {
+            border-color: #10b981;
+        }
+
+        #metrics-panel h3 {
+            border-bottom-color: rgba(16, 185, 129, 0.5);
+            color: #10b981;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-top: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-item span:last-child {
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .project-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+        }
+
+        .project-dialog {
+            background: rgba(15, 23, 42, 0.95);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+            width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            border: 1px solid #38bdf8;
+        }
+
+        .project-dialog h2 {
+            margin-bottom: 15px;
+            font-size: 20px;
+            color: #38bdf8;
+        }
+
+        .project-dialog p {
+            margin-bottom: 25px;
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+
+        .project-dialog button {
+            margin: 10px 0;
+            padding: 12px;
+            font-size: 15px;
+        }
+
+        .grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .weight-box {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            margin-top: 10px;
+        }
+
+        .weight-box h5 {
+            color: #38bdf8;
+            font-size: 13px;
+            margin-bottom: 8px;
+            margin-top: 0;
+            font-weight: 600;
+        }
+
+        .grid-3col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+
+        .grid-3col label {
+            font-size: 11px;
+            margin-top: 0;
+            text-align: center;
+            color: #e2e8f0;
+        }
+
+        .grid-3col input[type="number"] {
+            padding: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+    </style>
+</head>

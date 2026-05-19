@@ -1,2 +1,67 @@
 # Urban-Rural-Planning
-城乡不听规划
+🌍 3D Parametric Urban Planning Platform (3D参数化城市设计平台)
+基于 MapLibre GL JS 和 Turf.js 构建的纯前端、轻量级、高度参数化的 3D 城市规划与设计平台。无需配置复杂的后端环境，双击 HTML 文件即可在浏览器中开启专业的城市设计工作流。
+由 yyc (杜斯特里恩) 开发。
+✨ 核心特性
+🏗️ 建筑与街区构建
+参数化生成：设定容积率(FAR)、退线、建筑高度等参数，一键在多边形地块内生成多种排布模式（行列式、散点式、围合式等）的建筑群。
+街块与路网系统：自由绘制道路，自动生成带平滑倒角的交叉口；街块自动识别路网并进行收缩、贴边与挖除。
+模板库管理：支持提取地图原有白模或自定义绘制多边形作为模板，支持建筑单体与建筑群组的导入与导出。
+🌳 智能植被绿化
+提供单点种植与区域智能生成（支持避让建筑）。
+支持自定义植物形态（圆球、圆锥、圆柱、多球混合），高度与冠幅参数化调节。
+📊 实时指标测算
+框选地块，实时计算地块面积、总建筑面积、建筑密度、容积率（FAR）、以及拆改建前后的面积增减。
+☀️ 日照与阴影分析
+内置物理真实的天文算法（基于 SunCalc），选择日期与时间，即可模拟并播放真实的城市日照与阴影动态演变。
+📤 全场景 3D 模型导出
+一键将自定义建筑、底图白模、自绘道路/绿地连同 起伏的3D地形底盘 导出为三维模型。
+支持格式：.dae (Collada), .obj, .stl, .ply, .geojson。
+🧩 扩展与自定义
+插件系统：支持通过导入 .js 或 .zip 动态挂载第三方插件。
+灵活 UI：完全可拖拽的控制面板，支持自定义 UI 缩放与深色毛玻璃界面。
+📸 界面预览
+(建议在此处放几张你平台的运行截图，将图片放在项目的 images 文件夹中)
+城市全景生成	日照阴影分析
+<img src="https://via.placeholder.com/400x250.png?text=Preview+1" width="400">	<img src="https://via.placeholder.com/400x250.png?text=Preview+2" width="400">
+地块指标测算	路网与地形导出
+<img src="https://via.placeholder.com/400x250.png?text=Preview+3" width="400">	<img src="https://via.placeholder.com/400x250.png?text=Preview+4" width="400">
+🚀 快速开始
+本项目为纯前端无无服务器架构，极度开箱即用。
+克隆项目到本地：
+code
+Bash
+git clone https://github.com/你的用户名/你的仓库名.git
+运行平台：
+直接在浏览器（推荐使用 Chrome 或 Edge）中双击打开 index.html (即源码文件) 即可使用。
+提示：由于浏览器的跨域安全策略，部分模型导出功能如果出现跨域报错，建议使用本地服务器运行（例如使用 VSCode 的 Live Server 插件）。
+🛠️ 技术栈
+MapLibre GL JS: 核心 WebGL 3D 地图渲染引擎。
+Turf.js: 强大的前端地理空间分析库（处理布尔运算、缓冲区、几何生成）。
+Earcut: 极速的二维多边形三角剖分算法（用于 3D 模型导出组装）。
+JSZip: 前端动态生成与解析 ZIP 压缩包（用于模板与插件管理）。
+SunCalc: 计算太阳位置与光照相位的轻量级库。
+📖 快捷键与操作说明
+Ctrl + 左键拖拽 或 鼠标右键拖拽: 调整 3D 视角（俯仰角与旋转）。
+鼠标滚轮: 放大/缩小地图。
+Tab: 快速切换回“选择与编辑”模式。
+Ctrl + Z / Ctrl + Y: 撤销与重做。
+Enter: 在生成模式下快速刷新生成结果。
+双击: 完成多边形或线段的绘制闭合。
+📚 详细使用文档: 点击查看官方语雀文档 (外部链接)
+📂 项目管理与保存
+平台的数据不会保存在云端，绝对保护隐私：
+点击左侧工具栏的 💾 项目与界面。
+选择 导出当前项目，即可将当前的建筑、路网、视角书签等所有状态保存为一个 .json 文件。
+下次使用时，点击 导入本地项目 即可完美复原工作区。
+🤝 贡献指南
+欢迎任何对城市设计、WebGIS、前端参数化生成感兴趣的开发者提交 PR 或 Issue！
+Fork 本仓库
+创建您的特性分支 (git checkout -b feature/AmazingFeature)
+提交您的更改 (git commit -m 'Add some AmazingFeature')
+将您的修改推送到分支 (git push origin feature/AmazingFeature)
+开启一个 Pull Request
+✉️ 联系与反馈
+作者: yyc (杜斯特里恩)
+Email: yangych69@mail2.sysu.edu.cn
+如果您觉得这个项目有帮助，欢迎给一个 ⭐️ Star！
